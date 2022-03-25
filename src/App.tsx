@@ -9,6 +9,7 @@ import ErrorPage from './pages/ErrorPage';
 const App: React.FC = () => {
   const [posts, setPosts] = useState<Post[] | []>([]);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [fetching, setFetching] = useState(true)
 
   const getPosts = async (): Promise<void> => {
     try {
@@ -28,13 +29,16 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    getPosts();
+    getPosts().then(() => setFetching(false));
   }, []);
 
-  return posts.length ? (
-    <Router>
+
+
+  if(fetching) return <div>Please wait...</div>
+  else if (posts.length && !fetching)  {
+    return <Router>
       <Routes>
-        {['/', '/evens', '/odds'].map(path => (
+        {["/", "/evens", "/odds"].map((path) => (
           <Route key={path} path={path} element={<Table entries={posts} />} />
         ))}
         <Route
@@ -43,9 +47,7 @@ const App: React.FC = () => {
         />
       </Routes>
     </Router>
-  ) : (
-    <ErrorPage errorMsg={errorMsg} />
-  );
+  } else return <ErrorPage errorMsg={errorMsg} />
 };
 
 export default App;
