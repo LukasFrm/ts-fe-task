@@ -1,26 +1,51 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import './App.scss';
+import { Post } from './types';
+import Table from './components/table/Table';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ErrorPage from './pages/ErrorPage';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+const App: React.FC = () => {
+  const [posts, setPosts] = useState<Post[] | []>([]);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
+  const getPosts = async (): Promise<void> => {
+    try {
+      const res = await axios.get('https://jsonplaceholder.typicode.com/posts');
+      setPosts(res.data);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        if (err && err.response) {
+          setErrorMsg(
+            `Failed to retrieve data, response status: ${err.response.status}`
+          );
+          return;
+        }
+        setErrorMsg(`Failed to retrieve data`);
+      } else setErrorMsg(`Failed to retrieve data, unknown error`);
+    }
+  };
+
+  useEffect(() => {
+    getPosts();
+  }, []);
+
+  return posts.length ? (
+    <Router>
+      <Routes>
+        {['/', '/evens', '/odds'].map(path => (
+          <Route key={path} path={path} element={<Table entries={posts} />} />
+        ))}
+        <Route
+          path="*"
+          element={<ErrorPage errorMsg={"This path doesn't exist"} />}
+        />
+      </Routes>
+    </Router>
+  ) : (
+    <ErrorPage errorMsg={errorMsg} />
   );
-}
+};
 
 export default App;
